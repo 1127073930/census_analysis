@@ -1,0 +1,1033 @@
+---
+title: "缺失值与异常值：探索与处理"
+subtitle: "基于 UCI Adult数据的课堂案例"
+author: "柴海涛"
+date: today
+lang: zh
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "目录"
+    number-sections: true
+    code-fold: show
+    code-tools: true
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## 教学说明 {.unnumbered}
+
+::: {.callout-note title="本案例的定位"}
+本案例以 UCI Adult 数据集为载体，围绕**缺失值**与**异常值**这两个最经常遇到的问题， 实践“**发现 → 描述 → 诊断 → 决策 → 验证**”的完整过程。
+:::
+
+### 学习目标 {.unnumbered}
+
+学完本案例，学生应当能够：
+
+1.  **区分**缺失值的三种机制（MCAR / MAR / MNAR），并能为给定数据**构造证据**判断属于哪一种；
+2.  **熟练使用** `naniar`、`visdat`、`VIM` 三套工具，把缺失模式与异常模式**可视化**并读出结论；
+3.  **动手实现**均值 / 中位数 / 众数 / 前向 / 后向 / 回归 / kNN 七种插补，并**用已知真值评估**它们的填充误差；
+4.  **说清单一插补为什么低估方差**，并用多重插补（`mice` + Rubin 规则）给出更可信的标准误；
+5.  **解释** 3σ 法则、IQR/Tukey 法则、稳健 z 分数（MAD）、Grubbs 检验各自的**适用前提**，并说明它们在同一份偏态数据上为何给出截然不同的结果；
+6.  **运行**马氏距离、DBSCAN、LOF、k-means 四种多变量异常检测方法，并说明**变量选择与参数设置**如何改变结论；
+7.  对异常值做出**"错误 vs 真实极端"的判断**，选择删除 / 替换 / 缩尾 / 变换 / 分离分析等策略，并用 QQ 图、偏度、轮廓系数**评估处理效果**。
+
+
+### 案例背景 {.unnumbered}
+
+数据来自 1994 年美国人口普查（Current Population Survey），原始提供方为 UCI 机器学习库，是最经典的公开数据集之一。
+
+| 项目     | 说明                                       |
+|----------|--------------------------------------------|
+| 总样本量 | 48,842 条（训练集 32,561 + 测试集 16,281） |
+| 字段数   | 15（6 个数值型 + 9 个分类型）              |
+| 目标变量 | `income`：年收入是否超过 50K 美元          |
+| 完整记录 | 45,222 条（训练 30,162 + 测试 15,060）     |
+| 类别分布 | `>50K` 约占 24%，存在类别不平衡            |
+
+### 字段说明 {.unnumbered}
+
+| 字段 | 类型 | 说明 | 本课关注点 |
+|------------------|------------------|------------------|------------------|
+| `age` | 数值 | 年龄（17–90） | 单峰近似对称，方法选择不敏感 |
+| `workclass` | 分类 | 雇佣类型（8 类） | **含缺失 5.64%** |
+| `fnlwgt` | 数值 | 抽样权重 | **易被误删**，需理解字段含义 |
+| `education` | 分类 | 学历（16 类） | 与 `education-num` 一一对应，可作一致性检查 |
+| `education-num` | 数值 | 受教育年数（1–16） | 与 `education` 冗余 |
+| `marital-status` | 分类 | 婚姻状况（7 类） | 无缺失 |
+| `occupation` | 分类 | 职业（14 类） | **含缺失 5.66%，与 `workclass` 高度共现** |
+| `relationship` | 分类 | 家庭角色（6 类） | 无缺失 |
+| `race` | 分类 | 种族（5 类） | 无缺失 |
+| `sex` | 分类 | 性别 | 无缺失 |
+| `capital-gain` | 数值 | 资本收益 | **零膨胀（92% 为 0），IQR 法则失效** |
+| `capital-loss` | 数值 | 资本损失 | 零膨胀（95% 为 0） |
+| `hours-per-week` | 数值 | 每周工时（1–99） | 两端均有真实极端值 |
+| `native-country` | 分类 | 国籍（41 类） | 含缺失 1.79%，长尾类别多 |
+| `income` | 分类 | 目标变量（`>50K` / `<=50K`） | 类别不平衡，约 24% |
+
+
+::: {.callout-important title="为什么选择这个数据集"}
+三个特点让它成为理想的“病历”：
+
+1.  **缺失值集中在 3 个分类型变量上**（`workclass`、`occupation`、`native-country`），且缺失有明显的**共现结构**——“缺失不是随机的"。
+2.  **数值变量极度偏态**：`capital-gain` 有 92% 的取值为 0，偏度接近 12。
+3.  **异常值真假难辨**：`hours-per-week = 99` 和 `capital-gain = 99999` 看起来都是异常值，但证据指向完全不同的结论。
+:::
+
+### 环境准备 {.unnumbered}
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(naniar)   # 缺失值专用语法与可视化
+library(visdat)   # 整表数据质量概览
+library(VIM)      # 缺失模式与插补方法
+library(dbscan)   # 基于密度的多变量异常检测
+
+# 本案例的演示不依赖随机数；设置种子是为了保证讲义完全可复现
+set.seed(2026)
+```
+
+```{r}
+#| label: read-data
+data_dir <- "data"
+cols <- c("age", "workclass", "fnlwgt", "education", "education-num",
+          "marital-status", "occupation", "relationship", "race", "sex",
+          "capital-gain", "capital-loss", "hours-per-week", "native-country", "income")
+
+# 关键一步：把 "?" 显式声明为缺失值
+train <- read_csv(file.path(data_dir, "adult.data"),
+                  col_names = cols, na = "?", trim_ws = TRUE)
+
+test <- read_csv(file.path(data_dir, "adult.test"),
+                 col_names = cols, na = "?", trim_ws = TRUE,
+                 skip = 1, comment = "|") |>
+  mutate(income = str_remove(income, "\\.$"))
+
+dim(train)
+```
+
+::: {.callout-tip title="提示：na 参数定位缺失值"}
+原始文件用 `"?"` 表示"未知"，`read_csv()` 默认会把它读成**普通字符串**。如果不加 `na = "?"`，`workclass` 就会出现一个叫 `"?"` 的类别，缺失值会堂而皇之地潜伏在数据里，直到你画出图才发现。
+
+**"先把缺失值正确地识别出来"是整堂课的第一步，也是最容易被跳过的一步。**
+:::
+
+# 缺失值 {#sec-missing}
+
+## 为什么缺失值值得认真对待
+
+先看一个可能超出直觉的数字。这份数据里，只要把含缺失值的记录直接删掉，样本量会**从 32,561 掉到 30,162**，损失 2,399 条（7.4%）。看起来不多，但如果我们关心的是“高收入人群占比”，影响就比较明显了。
+
+```{r}
+#| label: fig-loss-preview
+#| fig-cap: "缺失与目标变量的关联：含缺失记录的 >50K 比例明显偏低"
+
+train |>
+  mutate(miss_any = if_any(c(workclass, occupation, `native-country`), is.na)) |>
+  group_by(缺失情况 = if_else(miss_any, "含缺失值", "完整记录")) |>
+  summarise(n = n(), pct = 100 * mean(income == ">50K")) |>
+  ggplot(aes(x = pct, y = 缺失情况)) +
+  geom_col() +
+  geom_text(aes(label = sprintf("%.1f%%  (n = %d)", pct, n)),
+            hjust = -0.05, size = 3.5) +
+  scale_x_continuous(limits = c(0, 32), expand = c(0, 0)) +
+  labs(x = ">50K 的比例（%）", y = NULL,
+       subtitle = "全样本基准：24.1%")
+```
+
+含缺失值的记录里只有 **13.9%** 是高收入，而完整记录是 **24.9%**。这意味着：**直接删除缺失行，会把高收入样本按更高比例保留下来，从而系统性地高估高收入占比，悄悄引入方向性的偏误**。
+
+## 缺失值的三种机制
+
+| 机制 | 全称 | 含义 | 本案例的可能情形 |
+|------------------|------------------|------------------|------------------|
+| **MCAR** | 完全随机缺失 | 缺失与任何变量（含自身）都无关 | 录入时随机丢字段 |
+| **MAR** | 随机缺失 | 缺失可由**其他已观测变量**解释 | 收入越高越不愿填职业 |
+| **MNAR** | 非随机缺失 | 缺失依赖于**缺失值本身** | 某些职业的人更不愿报职业 |
+
+::: {.callout-warning title="机制判断为什么重要"}
+三种机制对应**三种不同的处理合法性**：
+
+- **MCAR** 下，删除缺失行不引入偏误（只是损失效率），插补也是最安全的；
+- **MAR** 下，删除会引入偏误，但**多重插补**可以借助其他变量把偏误校正回来；
+- **MNAR** 下，常规插补都会失效，必须显式建模缺失机制或做敏感性分析。
+
+换句话说，**不知道机制就动手插补，等于不知道自己错在哪**。
+:::
+
+::: {.callout-note title="一个重要提醒：机制是不可直接观测的"}
+数据的真实缺失机制**永远无法从数据本身被证实**，只能被“证伪”或被“当作合理假设”。所以正确的说法不是“这份数据是 MAR”，而是“**没有证据反对 MAR，且证据反对 MCAR**”。
+
+可以讨论的问题：还有什么变量（比如问卷访员、地区）如果被观测到，可能让 MAR 假设更可信？
+:::
+
+## 缺失探索工具箱
+
+### 第一层：naniar 的体检
+
+`naniar` 的核心设计思想是：把“缺失”当作普通变量一样处理。
+
+```{r}
+#| label: naniar-summary
+# 变量级缺失概况
+miss_var_summary(train)
+
+# 记录级缺失概况（按缺失数排序）
+miss_case_summary(train) |> head(5)
+
+# 缺失的数量层级：有多少记录缺失了 k 个变量
+miss_case_table(train)
+```
+
+`gg_miss_var()`统计**每个变量的缺失比例**，展示"这张表里哪些变量最不完整"。
+
+```{r}
+#| label: fig-miss-var
+#| fig-cap: "各变量缺失比例"
+
+gg_miss_var(train, show_pct = TRUE)
+```
+
+`gg_miss_case()` 换一个视角：它按**记录**统计缺失变量的个数，表示“这张表里有多少条记录是不完整的"。
+
+```{r}
+#| label: fig-miss-case
+#| fig-cap: "gg_miss_case：每条记录缺失了几个变量"
+
+gg_miss_case(train)
+```
+
+### 第二层：visdat 的整表概览
+
+`vis_dat()` 和 `vis_miss()` 回答“这张数据表完整性如何”。
+
+```{r}
+#| label: fig-vis-miss
+#| fig-cap: "vis_miss：整表缺失模式一览"
+
+vis_miss(train)
+```
+
+```{r}
+#| label: fig-vis-dat
+#| fig-cap: "vis_dat：按变量类型与缺失叠加展示"
+
+vis_dat(train)
+```
+
+### 第三层：VIM 的组合视图
+
+`VIM::aggr()` 把三件事画在一起：**每个变量的缺失比例（柱）**、**缺失模式的共现结构（矩阵）**、**两两变量的缺失组合（图例）**。
+
+```{r}
+#| label: fig-vim-aggr
+#| fig-cap: "VIM::aggr：缺失比例、共现模式与组合频率"
+
+VIM::aggr(train[c("workclass", "occupation", "native-country", "income")],
+          numbers = FALSE, prop = TRUE, cex.axis = .7)
+```
+
+### 第四层：缺失的“共现结构”是关键线索
+
+单看缺失比例，`workclass`（5.64%）和 `occupation`（5.66%）几乎一样。**它们是在同一批记录上缺失的吗？**
+
+```{r}
+#| label: na-cooccur
+train |>
+  mutate(
+    na_workclass = is.na(workclass),
+    na_occupation = is.na(occupation),
+    na_country = is.na(`native-country`)
+  ) |>
+  count(na_workclass, na_occupation, na_country, name = "n") |>
+  arrange(desc(n))
+```
+
+结果非常干净，几乎是一个**结构性模式**：
+
+| workclass 缺失 | occupation 缺失 | native-country 缺失 | 记录数 |
+|:--------------:|:---------------:|:-------------------:|-------:|
+|       否       |       否        |         否          | 30,162 |
+|       是       |       是        |         否          |  1,809 |
+|       否       |       否        |         是          |    556 |
+|       是       |       是        |         是          |     27 |
+|       否       |       是        |         否          |      7 |
+
+`workclass` 和 `occupation` **几乎完全同进同退**。真实世界的问卷里，“工作性质”和“具体职业”往往挨在一起，受访者要么两个都答，要么两个都跳过——数据里的这个模式，正是它留下的证据。
+
+```{r}
+#| label: fig-miss-upset
+#| fig-cap: "gg_miss_upset：缺失组合的交集规模"
+gg_miss_upset(train[c("workclass", "occupation", "native-country")])
+```
+
+::: {.callout-tip title="提示：从「观测到的模式」到「关于机制的推断」"}
+"两个变量同进同退"**不能**直接证明缺失是随机的。它只说明：**缺失发生在记录层面（整块跳过），而不是变量层面（逐字段随机丢失）**。
+
+思考：这个模式**支持**什么、**不能**支持什么。
+:::
+
+## 诊断：本案例的缺失是 MCAR 吗？
+
+### 证据一：缺失与目标变量相关
+
+前面已经看到，含缺失记录的 `>50K` 比例是 13.9%，完整记录是 24.9%。**缺失与收入强相关**——这已经足以反对“缺失与所有变量无关"的 MCAR 假设。
+
+### 证据二：Little 的 MCAR 检验
+
+`naniar::mcar_test()` 实现了 Little (1988) 的多元正态检验：
+
+```{r}
+#| label: mcar-test
+mcar_test(train[c("workclass", "occupation", "native-country")])
+```
+
+$$H_0: \text{数据为 MCAR}$$
+
+p ≈ 0.019，在 5% 水平下拒绝 $H_0$。
+
+**结论的正确表述**：有明确证据反对 MCAR；MAR 是一个**在当前变量集合下尚可接受的工作假设**；至于是否 MNAR，需要领域知识（例如“某些职业的人更不愿报职业"），数据本身给不出答案。
+
+::: {.callout-important title="缺失本身可能携带信息"}
+`occupation` 也几乎必然缺失。也就是说，"**这条记录是否缺 `workclass`**"和“**这条记录是否缺 `occupation`**"几乎是同一个信息。ccupation`**"几乎是同一个信息。
+
+那么在设计模型时，一个合理的做法是**把"缺失"本身作为一个特征保留下来**（例如构造 `workclass_is_missing` 这个 0/1 变量），而不是把它丢掉。**缺失模式可能就是信号。**
+
+思考：如果 1,836 条“未报告工作性质”的记录确实系统性地来自某个特定人群，那么“是否报告”会不会比“报告了什么”更有预测力？
+:::
+
+## 处理策略
+
+四种主流策略，按“信息损失程度”递增排列:
+
+| 策略 | 做法 | 适用 | 风险 |
+|------------------|------------------|------------------|------------------|
+| **1. 整行删除** | `drop_na()` | MCAR、缺失比例低 | 样本损失 + 潜在偏误 |
+| **2. 当作独立类别** | 把 `NA` 改为 `"Unknown"` | 缺失比例高、且缺失本身有含义 | 类别数膨胀，稀释信号 |
+| **3. 单一插补** | 众数 / 中位数 / 回归 / kNN | 快速填补、探索阶段 | **低估方差**，人为制造确定性 |
+| **4. 多重插补** | 生成 $m$ 份填补数据 | MAR，需要保留不确定性 | 计算与解释成本高 |
+
+### 策略 1：整行删除——先看看代价
+
+```{r}
+#| label: compare-drop
+strategies <- tibble(
+  策略 = c("原始数据", "整行删除", "当作 Unknown 类别"),
+  样本量 = c(
+    nrow(train),
+    sum(complete.cases(train)),
+    nrow(train)
+  ),
+  `>50K 占比(%)` = c(
+    100 * mean(train$income == ">50K"),
+    100 * mean(train$income[complete.cases(train)] == ">50K"),
+    NA_real_
+  )
+)
+
+# "Unknown" 类别方案：把缺失显式变成一个类别
+train_unknown <- train |>
+  mutate(across(c(workclass, occupation, `native-country`),
+                ~ replace_na(as.character(.x), "Unknown")))
+
+strategies$`>50K 占比(%)`[3] <- 100 * mean(train_unknown$income == ">50K")
+strategies
+```
+
+注意第三行：把缺失当作独立类别时，**样本量完全不变，且目标变量占比不受影响**。这就是它的优势——你既没有丢掉记录，也没有凭空编造数值，而是**如实承认“这里我们不知道”**。
+
+### 策略 2：单一插补——以及它为什么危险
+
+```{r}
+#| label: single-impute
+# 众数插补（分类变量的常见做法）
+mode_of <- function(x) {
+  ux <- na.omit(x)
+  names(sort(table(ux), decreasing = TRUE))[1]
+}
+
+train_mode_imp <- train |>
+  mutate(across(c(workclass, occupation, `native-country`), ~ replace_na(.x, mode_of(.x))))
+
+# 检查插补后的分布变形：occupation 前后对比
+bind_rows(
+  count(train, occupation, name = "n") |> mutate(data = "插补前"),
+  count(train_mode_imp, occupation, name = "n") |> mutate(data = "插补后")
+) |>
+  group_by(data) |>
+  mutate(pct = 100 * n / sum(n)) |>
+  slice_max(pct, n = 6) |>
+  select(data, occupation, pct) |>
+  pivot_wider(names_from = data, values_from = pct, values_fill = 0) |>
+  arrange(desc(`插补前`))
+```
+
+::: {.callout-warning title="众数插补制造了一个虚假的「多数派」"}
+插补后 `Prof-specialty`的占比会被显著抬高，因为众数恰好是它——而缺失的 1,843 条记录里，**真实情况完全可能一个都不是`Prof-specialty`**。
+
+更严重的问题在于**方差**：插补把“不确定”替换成了“确定的众数”。如果后续要算标准误或做假设检验，这个不确定性必须被保留——这正是多重插补存在的理由。
+:::
+
+### 策略 2 的复盘：一次可控实验——把真值藏起来，看七种填法谁更准
+
+前面两节都是推理。现在我们做一件在真实数据上通常做不到的事：**我们知道真值**。
+
+做法是：从完整的 `train` 里**随机抽掉 10% 的取值**——这正是标准的 MCAR——然后用不同方法各填一遍，再拿填出来的值与藏起来的真值比对，算出**填充误差 RMSE**。
+
+```{r}
+#| label: lab-setup
+sim <- train |>
+  select(age, `education-num`, `hours-per-week`, education, workclass,
+         occupation, `native-country`, sex, income)
+```
+
+```{r}
+#| label: lab-impute-fn
+# 把 target 的 10% 取值随机藏起来，用五种"通用"方法各填一遍
+impute_lab <- function(target, formula, p = 0.1, seed = 2026) {
+  set.seed(seed)
+  d <- sim
+  truth <- d[[target]]
+  miss <- sample(nrow(d), round(p * nrow(d)))
+  d[[target]][miss] <- NA
+  x <- d[[target]]
+
+  mode_v <- as.numeric(names(sort(table(x), decreasing = TRUE))[1])
+  fit <- lm(formula, data = d)
+  imp_knn <- VIM::kNN(select(d, age, `education-num`, `hours-per-week`, education),
+                      k = 5, imp_var = FALSE)[[target]]
+
+  imp <- list(
+    均值   = replace_na(x, mean(x, na.rm = TRUE)),
+    中位数 = replace_na(x, median(x, na.rm = TRUE)),
+    众数   = replace_na(x, mode_v),
+    回归   = ifelse(is.na(x), predict(fit, newdata = d), x),
+    kNN    = imp_knn
+  )
+
+  tibble(
+    方法 = names(imp),
+    `填充值 RMSE` = map_dbl(imp, ~ sqrt(mean((.x[miss] - truth[miss])^2))),
+    `分布均值` = map_dbl(imp, mean),
+    `分布 SD` = map_dbl(imp, sd),
+    `均值的标准误` = map_dbl(imp, ~ sd(.x) / sqrt(length(.x)))
+  ) |>
+    mutate(变量 = target, .before = 1)
+}
+```
+
+```{r}
+#| label: lab-results
+bind_rows(
+  impute_lab("education-num",  `education-num` ~ age + education + `hours-per-week`),
+  impute_lab("hours-per-week", `hours-per-week` ~ age + education + `education-num`)
+) |>
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r}
+#| label: lab-truth
+# 参照：没有任何缺失时，这两个变量的真值是什么
+tibble(
+  变量 = c("education-num", "hours-per-week"),
+  真值均值 = c(mean(sim$`education-num`), mean(sim$`hours-per-week`)),
+  `真值 SD` = c(sd(sim$`education-num`), sd(sim$`hours-per-week`)),
+  真值标准误 = c(sd(sim$`education-num`), sd(sim$`hours-per-week`)) / sqrt(nrow(sim))
+) |>
+  mutate(across(where(is.numeric), ~ round(.x, 4)))
+```
+
+把两张表并排看，会得到**两个截然不同的结论**：
+
+**先看 `education-num` 这一组**：均值 / 中位数 / 众数填充的 RMSE 分别是 2.62、2.62、2.83，而**回归填充和 kNN 填充的 RMSE 是 0.00**——3,256 个被藏起来的值**一个不差地填了回来**。
+
+原因毫不神秘：`education`（16 个类别）与 `education-num`（1–16）**一一对应**，回归和 kNN 都能从 `education` 直接读回答案。（这两个字段“冗余"。）
+
+**再看 `hours-per-week` 这一组**：五种方法全部落在 12.2 \~ 12.7 之间，**没有一个胜出**。因为 `hours-per-week` 与 `age`、`education-num` 几乎不相关（$r \approx 0.07$），回归和 kNN 能借到的“外力"接近于零。
+
+::: {.callout-important title="插补能借到多少信息，完全取决于其他变量里有没有关于它的信息"}
+这是本课最重要的结论之一，而它恰好和**缺失机制**是同一件事的两面：
+
+- **MCAR/MAR 下插补才有意义**，因为“其他变量的取值”确实携带了“缺失值可能是什么”的信息；
+- 但如果**没有任何变量与被插补变量相关**，回归和 kNN 都会退化成均值填充——**这是数据的性质，不是方法的失败**；
+- 反过来，如果某个变量能被其他变量近乎完美地预测，那么你该问的不是“怎么插补它”，而是“**它是不是一个冗余字段，应该直接删掉**”。
+:::
+
+::: {.callout-warning title="所有单一插补都在做同一件危险的事：把「不知道」改成「确定知道」"}
+再看最后两列。`education-num` 的真值 SD 是 2.573，**均值填充后变成 2.44**；`hours-per-week` 的真值 SD 是 12.347，**均值填充后变成 11.7**。两个变量都缩小了约 5%。
+
+这不是巧合。可以证明，单一插补后的方差大约只剩原来的 $(1-p)$ 倍（$p$ 是缺失比例）——这里 $p = 0.1$，$\sqrt{1 - 0.1} \approx 0.949$，与观察到的 5% 缩水吻合。**缺失比例越高，这种“虚假的精确感”越强。**
+
+**后果**：均值本身几乎无偏（看 `分布均值` 那一列），但**报出去的标准误是偏小的**。凡是后面要做假设检验、置信区间、模型比较，这个偏差都会直接传到结论里。
+
+验算：把上面 `p` 改成 0.5 再跑一遍，看 SD 缩水多少。（答案：缩到约 $\sqrt{0.5} \approx 0.71$ 倍。）
+:::
+
+**前向填充 / 后向填充**要单独说，因为它和前面五种**不是一类方法**：它完全不用其他变量，只假设“**相邻的记录彼此相似**”。
+
+```{r}
+#| label: lab-fill
+set.seed(2026)
+hpw_na <- sim$`hours-per-week`
+miss <- sample(length(hpw_na), round(0.1 * length(hpw_na)))
+hpw_na[miss] <- NA
+truth <- sim$`hours-per-week`[miss]
+
+ff_down <- tidyr::fill(tibble(v = hpw_na), v, .direction = "down")$v
+ff_up   <- tidyr::fill(tibble(v = hpw_na), v, .direction = "up")$v
+
+# 把行顺序彻底打乱，再前向填充一次
+set.seed(2027)
+shuf <- sample(length(hpw_na))
+ff_shuf <- tidyr::fill(tibble(v = hpw_na[shuf]), v, .direction = "down")$v[order(shuf)]
+
+tibble(
+  填法 = c("前向填充（原顺序）", "后向填充（原顺序）", "前向填充（打乱顺序后）"),
+  无法填充 = map_int(list(ff_down, ff_up, ff_shuf), ~ sum(is.na(.x))),
+  填充值RMSE = map_dbl(list(ff_down, ff_up, ff_shuf),
+                      ~ sqrt(mean((.x[miss] - truth)^2, na.rm = TRUE))),
+  分布均值 = map_dbl(list(ff_down, ff_up, ff_shuf), ~ mean(.x, na.rm = TRUE))
+) |>
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+```
+
+三个观察，每一个都值得停下来讲：
+
+1.  **它明显更差。** 填充值 RMSE 是 17.3 \~ 17.9，而均值填充只有 **12.7**。原因很直白：均值填充用了**全部 29,000 个观测**的信息，前向/后向填充只用了**一个邻居**。样本量从 3 万降到 1，误差自然大。
+2.  **它填不满。** 前向填充有 **1 条**填不了——第 1 行如果是缺失，它前面没有任何观测值。这是所有"依赖顺序"的方法都要面对的边界问题。
+3.  **它随行顺序改变。** 同一份数据，原顺序和打乱顺序给出的 RMSE 是 17.9 与 17.3。**一个“结论随行怎么排而变化”的方法，不能用来做推断。**
+
+::: {.callout-important title="前向/后向填充的合法使用场景只有一个：行顺序本身有含义"}
+`tidyr::fill()` 假设的是“**上一条记录与这一条相似**"。这个假设在两种情况下成立：**时间序列**（相邻时刻）、**沿某个空间或流程顺序排列的数据**。
+
+在**横截面数据**里——本案例的成人普查数据正是横截面——行顺序**没有任何含义**（它只是数据的排列方式）。此时前向填充等价于“从别人身上随机借一个值"，是**一个非常低效的估计器**。
+:::
+
+### 策略 3：多重插补——把「猜」的不确定性算进去
+
+多重插补（Multiple Imputation）的流程是：
+
+```{mermaid}
+flowchart LR
+    A["含缺失的原始数据"] --> B["生成 m 份插补数据<br/>(m 通常取 5~20)"]
+    B --> C["分别做 m 次完整分析"]
+    C --> D["用 Rubin 规则合并结果"]
+    D --> E["得到带正确标准误的估计"]
+```
+
+用刚才那份“藏了 10% `hours-per-week`"的数据，把整套流程跑一遍：
+
+```{r}
+#| label: mi-mice
+# 只用 4 个变量喂给 mice，是为了把演示控制在 2 秒内；
+# 若加入 workclass / occupation / native-country（14~41 个类别），耗时会升到分钟级
+set.seed(2026)
+d_mi <- train |>
+  select(age, `education-num`, `hours-per-week`, education) |>
+  mutate(across(where(is.character), factor))
+d_mi$`hours-per-week`[sample(nrow(d_mi), round(0.1 * nrow(d_mi)))] <- NA
+
+mi <- mice::mice(d_mi, m = 5, maxit = 5, printFlag = FALSE, seed = 2026)
+```
+
+**同一个缺失位置，5 份插补数据里填的可能是 5 个不同的值。**
+
+```{r}
+#| label: mi-values
+# 前 5 个缺失位置在 5 份插补数据中的取值
+head(mi$imp[["hours-per-week"]], 5)
+```
+
+然后按 Rubin 规则合并。下面几行代码，每一行对应一个概念：
+
+```{r}
+#| label: mi-rubin
+# 对每一份插补数据分别算均值，以及这个均值的抽样方差
+q <- map_dbl(1:5, \(i) mean(complete(mi, i)[["hours-per-week"]]))
+u <- map_dbl(1:5, \(i) {
+  dd <- complete(mi, i)
+  var(dd[["hours-per-week"]]) / nrow(dd)
+})
+
+m <- 5
+qbar  <- mean(q)                      # 合并点估计
+ubar  <- mean(u)                      # 组内方差
+b     <- var(q)                       # 组间方差
+se_mi <- sqrt(ubar + (1 + 1/m) * b)   # Rubin 规则
+
+tibble(
+  分量 = c("组内方差 ubar", "组间方差 b", "合并方差 T", "合并标准误 根号T"),
+  数值 = c(ubar, b, ubar + (1 + 1/m) * b, se_mi)
+) |>
+  mutate(数值 = signif(数值, 4))
+```
+
+把四种做法并排放在一起：
+
+```{r}
+#| label: mi-compare
+x_obs  <- d_mi[["hours-per-week"]]
+x_mean <- replace_na(x_obs, mean(x_obs, na.rm = TRUE))
+
+tibble(
+  做法 = c("完整数据（真值）", "整行删除", "均值插补", "多重插补 (m = 5)"),
+  样本量 = c(nrow(train), sum(!is.na(x_obs)), nrow(d_mi), nrow(d_mi)),
+  均值的估计 = c(mean(train[["hours-per-week"]]),
+                 mean(x_obs, na.rm = TRUE),
+                 mean(x_mean),
+                 qbar),
+  标准误 = c(sd(train[["hours-per-week"]]) / sqrt(nrow(train)),
+             sd(x_obs, na.rm = TRUE) / sqrt(sum(!is.na(x_obs))),
+             sd(x_mean) / sqrt(length(x_mean)),
+             se_mi)
+) |>
+  mutate(across(where(is.numeric), ~ round(.x, 4)))
+```
+
+::: {.callout-important title="点估计几乎一样，标准误差了 12%——差距全在「诚不诚实」上"}
+四种做法的**均值都落在 40.3 \~ 40.4**，谁也看不出区别。真正的区别在最后一列：
+
+- **均值插补给的标准误最小**——而它恰恰是**唯一一个错的那个**。它把 3,256 个未知值全部钉死在均值上，人为消灭了这部分变异。
+- **多重插补的标准误最大**，因为它的合并方差里除了 `ubar`，还有一项"组间方差"的加罚项。这里的 `ubar = 0.004764` 已经约等于"完整数据的方差 ÷ n"，**多出来的 `b` 就是"我们不知道那几个值"的代价**（`b` 相对很小，但正是它让标准误从 0.0647 回到了 0.0725）。
+- **注意 `ubar` 开根号后是 0.0690，与真值的 0.0684 几乎相同**——这说明 `mice` 的插补模型没有凭空制造信息，也没有浪费信息。要看一个插补模型好不好，这是最有用的诊断量。
+:::
+
+::: {.callout-caution title="多重插补不是免费的"}
+它需要三样东西：① 一个**可信的插补模型**（`mice` 默认用链式方程逐个变量回归，模型的函数形式由你负责）；② 一套**贯穿始终**的分析流程（插补后再建模，不能先把数据"插补好"存成一份完整数据当没事发生）；③ 报告时的**诚实披露**（`m` 是多少、用了哪些变量、有没有收敛问题）。
+
+**它纠正不了 MNAR。** Rubin 规则处理的是"插补值不确定"，不是"缺失机制有问题"。如果人们恰恰是因为薪资高而不报薪资，插补得再漂亮也依然是偏的。
+:::
+
+::: {.callout-note title="关于多重插补最后要记住的几点"}
+- 每份插补数据里，同一个缺失位置填的**值都不同**——差异反映的就是缺失的不确定性；
+- 最终把 $m$ 次分析结果按 **Rubin 规则**合并，标准误会**大于**任何单次分析；
+- 标准实现是 `mice` 包：`mice(df, m = 5, maxit = 5)`——本课已经装好并跑通；换到别的机器上时运行 `install.packages("mice")` 即可。
+- 另外值得注意的是：`mice` 的默认算法也是 **MICE（链式方程）**，和包名同义——这常常是学生的一个混淆点。
+:::
+
+### 策略选择速查
+
+```{mermaid}
+flowchart TD
+    A["发现缺失"] --> B["缺失比例是多少？"]
+    B -->|"> 40%"| C["考虑整列删除<br/>或当作独立类别"]
+    B -->|"5% ~ 40%"| D["缺失是否有含义？"]
+    B -->|"< 5%"| E["机制判断"]
+    D -->|"是"| F["保留为 Unknown 类别"]
+    D -->|"否"| E
+    E -->|"MCAR"| G["整行删除或简单插补"]
+    E -->|"MAR"| H["多重插补 / 回归插补"]
+    E -->|"MNAR"| I["显式建模缺失机制<br/>+ 敏感性分析"]
+```
+
+## 课后作业 1
+
+::: {.callout-note title="作业 1：缺失值诊断报告"}
+请针对 **`test` 数据集**（16,281 条）回答下列问题，并用**一条命令或一张图**给出证据：
+
+1.  `test` 与 `train` 的缺失比例分别是多少？两者的缺失**模式**是否一致？
+2.  `test` 中，含缺失的记录中 `>50K` 比例是多少？与完整记录相比如何？这支持哪种缺失机制？
+3.  **思考题（不写代码）**：如果你要基于这份数据训练一个收入预测模型，你会选择哪种处理策略？请说明理由，并指出你的选择可能带来什么偏误。
+:::
+
+
+# 异常值 {#sec-outlier}
+
+## 什么是异常值：先分清三种来源
+
+"异常值"（outlier）本身不是错误。处理之前，必须先回答一个问题：**它为什么在那里？**
+
+| 来源           | 例子                                     | 正确应对       |
+|----------------|------------------------------------------|----------------|
+| **数据错误**   | 录入时多敲一个 9；单位混用（元 vs 万元） | 修正或删除     |
+| **真实极端值** | 真实的每周 99 小时工作者                 | **通常应保留** |
+| **不同总体**   | 混入了另一套抽样框的记录                 | 分层或分离建模 |
+
+::: {.callout-important title="提示"}
+**"是异常值"和“要删掉"是两个完全不同的判断。**
+
+一个值在统计上离群，只说明它**罕见**，不说明它**错误**。删掉真实极端值的代价，往往比留着它更大——你会系统性地抹掉最值得解释的那部分现象。
+:::
+
+## 单变量检测
+
+### 起点：描述统计与箱线图
+
+```{r}
+#| label: univar-summary
+train |>
+  select(where(is.numeric)) |>
+  pivot_longer(everything(), names_to = "变量", values_to = "值") |>
+  group_by(变量) |>
+  summarise(
+    最小值 = min(值), Q1 = quantile(值, .25), 中位数 = median(值),
+    Q3 = quantile(值, .75), 最大值 = max(值),
+    `偏度` = mean((值 - mean(值))^3) / sd(值)^3,
+    `0 值占比(%)` = 100 * mean(值 == 0),
+    .groups = "drop"
+  ) |>
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+```
+
+请先看这张表，**不要急着跑检测方法**。三个信号已经很明显：
+
+- `capital-gain` / `capital-loss` 的**中位数和 Q1、Q3 全都是 0**，且偏度极高；
+- `hours-per-week` 的上限是 99——一个**看起来很“整齐"的数字**；
+- `fnlwgt` 的最大值是最小值的 100 多倍。
+
+```{r}
+#| label: fig-boxplot
+#| fig-cap: "各数值变量的箱线图：注意 capital-gain / capital-loss 的箱体被压成一条线"
+
+train |>
+  select(where(is.numeric)) |>
+  pivot_longer(everything(), names_to = "变量", values_to = "值") |>
+  ggplot(aes(x = 值)) +
+  geom_boxplot(outlier.alpha = 0.3, outlier.size = 0.6) +
+  facet_wrap(~ 变量, scales = "free", ncol = 2) +
+  labs(x = NULL, y = NULL)
+```
+
+### 方法一：3σ 法则——及其正态假设
+
+$$|x_i - \bar{x}| > 3s \quad \Rightarrow \quad \text{判为异常}$$
+
+```{r}
+#| label: rule-3sigma
+detect_3sigma <- function(x) abs(x - mean(x)) > 3 * sd(x)
+
+train |>
+  summarise(across(where(is.numeric), ~ sum(detect_3sigma(.x)))) |>
+  pivot_longer(everything(), names_to = "变量", values_to = "n_3sigma") |>
+  mutate(占比 = sprintf("%.2f%%", 100 * n_3sigma / nrow(train)))
+```
+
+::: {.callout-warning title="3σ 法则的两条前提"}
+1.  **近似正态**。偏态数据下，均值和标准差**本身就被极端值拉偏**了——标准差异常大，反而让极端值“够不着"3σ 的门槛。这叫做**掩蔽效应（masking）**。
+2.  **均值和标准差都不稳健**。哪怕只有 1% 的极端值，$s$ 就可能被抬高数倍。
+
+有点悖论的表述：**越是需要检测异常值的数据，3σ 法则越不可靠。**
+:::
+
+### 方法二：IQR / Tukey 法则——以及它在零膨胀数据上的彻底失效
+
+$$x < Q_1 - 1.5 \cdot \text{IQR} \quad \text{或} \quad x > Q_3 + 1.5 \cdot \text{IQR} \quad \Rightarrow \quad \text{判为异常}$$
+
+```{r}
+#| label: rule-iqr
+detect_iqr <- function(x) {
+  q <- quantile(x, c(.25, .75), names = FALSE)
+  iqr <- diff(q)
+  x < q[1] - 1.5 * iqr | x > q[2] + 1.5 * iqr
+}
+
+train |>
+  summarise(across(where(is.numeric), ~ sum(detect_iqr(.x)))) |>
+  pivot_longer(everything(), names_to = "变量", values_to = "n_iqr") |>
+  mutate(占比 = sprintf("%.2f%%", 100 * n_iqr / nrow(train)))
+```
+
+现在把目光集中在 `capital-gain` 上：
+
+```{r}
+#| label: cg-iqr-breakdown
+x <- train$`capital-gain`
+q <- quantile(x, c(.25, .75))
+c(Q1 = q[1], Q3 = q[2], IQR = diff(q),
+  上界 = q[2] + 1.5 * diff(q),
+  被判异常数 = sum(x > q[2] + 1.5 * diff(q)),
+  非零值总数 = sum(x > 0))
+```
+
+::: {.callout-important title="这个结果值得停下来讲 5 分钟"}
+`capital-gain` 有 92% 的记录取值为 0，于是 $Q_1 = Q_3 = 0$，$\text{IQR} = 0$，上界也就是 0。
+
+结果是：**任何大于 0 的取值都被判为异常**——恰好是全部 2,712 条非零记录（8.3%）。
+
+IQR 法则并没有算错，它只是**被用在了超出其设计初衷的场景上**。Tukey 法则的隐含前提是**分布连续、单一峰**；面对“零膨胀 + 长尾"这种混合结构，分位数几乎重叠，法则就退化了。
+
+**这提醒我们：任何检测方法都有适用边界，先看分布，再选方法。**
+:::
+
+### 方法三：稳健 z 分数（MAD）——对偏态更宽容
+
+用**中位数**和**中位绝对偏差（MAD）**替代均值和标准差：
+
+$$M_i = \frac{0.6745 \,(x_i - \tilde{x})}{\text{MAD}}, \qquad \text{MAD} = \text{median}\big(|x_i - \tilde{x}|\big)$$
+
+常数 0.6745 是为了让 MAD 在正态分布下与标准差可比。经验阈值取 $|M_i| > 3.5$。
+
+::: {.callout-note title="关于常数 0.6745 的由来"}
+对标准正态分布 $Z$，$\text{MAD} = \text{median}(|Z|)$ 恰好等于**第 75 百分位数** $z_{0.75} \approx 0.6745$。所以除以 MAD 再乘 0.6745，就是在用“分位数尺度"去近似标准差。
+:::
+
+```{r}
+#| label: rule-mad
+detect_mad <- function(x, k = 3.5) {
+  mz <- 0.6745 * (x - median(x)) / mad(x)
+  abs(mz) > k
+}
+
+train |>
+  summarise(across(where(is.numeric), ~ sum(detect_mad(.x)))) |>
+  pivot_longer(everything(), names_to = "变量", values_to = "n_MAD") |>
+  mutate(占比 = sprintf("%.2f%%", 100 * n_MAD / nrow(train)))
+```
+
+### 方法四：先变换，再检测
+
+对重尾的正值变量，`log1p()` 能把乘性结构变成加性结构，往往让分布**接近对称**，之后 IQR 或 3σ 才有意义。
+
+```{r}
+#| label: fig-log-transform
+#| fig-cap: "capital-gain：原始尺度 vs log1p 变换后（仅非零值）"
+
+train |>
+  filter(`capital-gain` > 0) |>
+  transmute(尺度 = "变换前", 值 = `capital-gain`) |>
+  bind_rows(
+    train |> filter(`capital-gain` > 0) |>
+      transmute(尺度 = "log1p 变换后", 值 = log1p(`capital-gain`))
+  ) |>
+  ggplot(aes(x = 值)) +
+  geom_histogram(bins = 40) +
+  facet_wrap(~ 尺度, scales = "free") +
+  labs(x = NULL, y = "频数")
+```
+
+```{r}
+#| label: rule-log-iqr
+cg_pos <- train$`capital-gain`[train$`capital-gain` > 0]
+ql <- quantile(log1p(cg_pos), c(.25, .75))
+iqr_l <- diff(ql)
+c(log_上界 = round(expm1(ql[2] + 1.5 * iqr_l), 1),
+  对数尺度被判异常数 = sum(log1p(cg_pos) > ql[2] + 1.5 * iqr_l),
+  占非零值比例 = sprintf("%.2f%%",
+    100 * mean(log1p(cg_pos) > ql[2] + 1.5 * iqr_l)))
+```
+
+### 四种方法的对比
+
+| 方法           | 隐含假设       | 对正态数据 | 对零膨胀重尾数据        |
+|----------------|----------------|------------|-------------------------|
+| 3σ             | 近似正态       | 合适       | 掩蔽效应，失效          |
+| IQR / Tukey    | 单峰连续分布   | 合适       | 完全失效（IQR = 0）     |
+| MAD 稳健 z     | 近似对称       | 合适       | 较稳健，仍受 0 膨胀干扰 |
+| log 变换 + IQR | 正值、乘性结构 | 不适用     | 推荐                    |
+
+下面的代码把四种方法在同一份数据上的识别结果并列出来。**请重点看 `capital-gain` 的三行**：
+
+```{r}
+#| label: compare-methods
+compare_methods <- function(v) {
+  tibble(
+    方法 = c("3σ", "IQR/Tukey", "MAD (k=3.5)"),
+    异常数 = c(sum(detect_3sigma(v)), sum(detect_iqr(v)), sum(detect_mad(v)))
+  ) |>
+    mutate(占比 = sprintf("%.2f%%", 100 * 异常数 / length(v)))
+}
+
+c("age", "hours-per-week", "capital-gain", "capital-loss") |>
+  map(\(v) compare_methods(train[[v]]) |> mutate(变量 = v, .before = 1)) |>
+  list_rbind()
+```
+
+::: {.callout-tip title="提示"}
+不要只记住“用哪个方法"。要让他们**先回答两个问题**：
+
+1.  这个变量是什么**类型**的分布？（连续 / 计数 / 零膨胀 / 长尾）
+2.  我要检测的“异常"是**极端大值**、**极端小值**，还是**结构上的不同**？
+
+问题的答案决定方法的选择，而不是反过来。
+:::
+
+## 多变量检测
+
+单变量方法会漏掉一类异常：**每个变量单独看都正常，放在一起才不合理**。
+
+### 马氏距离
+
+马氏距离 $d_i^2 = (x_i - \bar{x})^\top S^{-1} (x_i - \bar{x})$ 考虑了变量间的**相关性与尺度差异**，在多元正态假设下服从 $\chi^2_p$ 分布。
+
+```{r}
+#| label: mahalanobis
+num_vars <- train |> select(age, `education-num`, `hours-per-week`)
+d2 <- mahalanobis(num_vars, colMeans(num_vars), cov(num_vars))
+
+# 卡方阈值：自由度为变量个数 p = 3，取 99.9% 分位数
+thresh <- qchisq(0.999, df = 3)
+c(阈值 = round(thresh, 2), 判为异常数 = sum(d2 > thresh),
+  占比 = sprintf("%.2f%%", 100 * mean(d2 > thresh)))
+```
+
+```{r}
+#| label: fig-mahalanobis
+#| fig-cap: "马氏距离 vs 年龄：红点超过卡方阈值"
+
+tibble(age = num_vars$age, d2 = d2) |>
+  ggplot(aes(x = age, y = d2)) +
+  geom_point(aes(color = d2 > thresh), alpha = 0.3, size = 0.7) +
+  geom_hline(yintercept = thresh, linetype = "dashed") +
+  scale_color_manual(values = c("FALSE" = "grey60", "TRUE" = "red"),
+                     labels = c("常规", "异常"), name = NULL) +
+  labs(x = "年龄", y = "马氏距离平方")
+```
+
+::: {.callout-warning title="马氏距离的两个弱点"}
+1.  **它自身不稳健**。$\bar{x}$ 和 $S$ 同样会被极端值拉动，所以异常值可能“互相掩护"。稳健版本（MCD，最小协方差行列式）会好一些。
+2.  **它假设椭圆对称的分布**。若真实结构是多峰的，马氏距离会把整个小簇都判成异常。
+:::
+
+### 基于密度的方法：DBSCAN
+
+DBSCAN 把低密度区域的点标为噪声（`cluster == 0`）。它不需要预设簇数，能发现任意形状的簇——代价是要调 `eps` 和 `minPts` 两个参数。
+
+```{r}
+#| label: dbscan-outlier
+X <- scale(num_vars)
+db <- dbscan(X, eps = 0.5, minPts = 20)
+c(噪声点数 = sum(db$cluster == 0),
+  占比 = sprintf("%.2f%%", 100 * mean(db$cluster == 0)),
+  簇数 = length(setdiff(unique(db$cluster), 0)))
+```
+
+### LOF方法
+
+
+
+## 处理：从“检测"到"决策"
+
+四种处理方式，各自代价不同：
+
+| 方式 | 做法 | 代价 |
+|------------------------|------------------------|------------------------|
+| **删除** | 滤掉超阈值的记录 | 损失样本；若异常与目标相关，引入偏误 |
+| **缩尾**（winsorize） | 把极端值压到第 1/99 百分位 | 保留样本，但**扭曲了真实取值** |
+| **变换** | `log` / `Box-Cox` / `Yeo-Johnson` | 改变量纲，可解释性下降 |
+| **保留 + 分开建模** | 单独建一个指示变量或分段处理 | 模型更复杂 |
+
+```{r}
+#| label: handling-compare
+winsorize <- function(x, p = 0.01) {
+  q <- quantile(x, c(p, 1 - p), names = FALSE)
+  pmin(pmax(x, q[1]), q[2])
+}
+
+cg <- train$`capital-gain`
+
+tibble(
+  处理方式 = c("原始", "缩尾至 1%/99%", "删除 IQR 离群点", "log1p 变换"),
+  `capital-gain 均值` = c(
+    mean(cg),
+    mean(winsorize(cg)),
+    mean(cg[!detect_iqr(cg)]),
+    mean(log1p(cg))
+  ),
+  `样本量` = c(nrow(train), nrow(train), sum(!detect_iqr(cg)), nrow(train))
+) |>
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+::: {.callout-important title="注意"}
+- **原始**：均值 1,077.6
+- **缩尾 1%/99%**：均值降到约 634
+- **删除 IQR 离群点**：均值变成 **0**（因为 IQR 法则把全部非零值都删掉了）
+
+**同一份数据、同一句“处理异常值"，三种做法给出三个完全不同的均值。** 这不是“哪个对"的问题，而是“**你必须说明你做了哪一种，以及为什么**"的问题。
+:::
+
+## 判断“错误还是真实极端"
+
+这是本课最需要**领域判断**的一步。用三个例子做对照。
+
+### 例 A：`capital-gain == 99999`
+
+```{r}
+#| label: case-a
+train |> filter(`capital-gain` > 20000) |>
+  count(`capital-gain`) |> arrange(desc(`capital-gain`)) |> head(5)
+
+train |> filter(`capital-gain` == 99999) |>
+  summarise(n = n(), 平均年龄 = mean(age),
+            `>50K 占比(%)` = round(100 * mean(income == ">50K"), 1))
+```
+
+**证据**：`99999` 出现了 159 次，而**第二高**的取值只有 41,310——中间是一整段空白。这个反复出现的上限“是**封顶值（top-code）或哨兵值**的典型特征，而不是 159 个人恰好都赚 99,999 美元。
+
+**判断**：高度疑似**编码产物**。处理时应当**先向数据提供方确认**，再决定删除。注意这 159 条数据都是 `>50K`——它们承载了极强的信号，**不能随手删掉**。
+
+### 例 B：`hours-per-week == 99`
+
+```{r}
+#| label: case-b
+train |> filter(`hours-per-week` == 99) |>
+  summarise(n = n(), 中位年龄 = median(age),
+            `>50K 占比(%)` = round(100 * mean(income == ">50K"), 1))
+
+train |> summarise(全样本 = round(100 * mean(income == ">50K"), 1))
+```
+
+**证据**：99 小时有 85 条。这批人的中位年龄 42 岁，`>50K` 占比 29.4%，略高于全样本的 24.1%——**完全符合“高投入高回报"的合理画像**。
+
+
+**判断**：这是**真实极端值**，应当**保留**。若模型需要，可以单独构造指示变量。
+
+### 例 C：`fnlwgt` 的极端大值
+
+`fnlwgt` 是**抽样权重**，不是个人属性。它的"异常"反映的是抽样设计，不是数据错误。
+
+::: {.callout-warning title="教学提示：一个反例能省下很多时间"}
+`fnlwgt` 是学生最常误删的变量之一。这里的关键不是统计方法，而是**读懂字段含义**。
+
+请学生记住：**在做任何异常值处理之前，先确认这个变量到底度量什么。** 这一句话能避免的建模事故，比任何检测算法都多。
+:::
+
+## 课后作业 2
+
+::: {.callout-note title="作业 2：异常值决策报告"}
+请针对 **`age`** 和 **`capital-loss`** 两个变量完成：
+
+1.  分别画出分布图，判断各属于哪种分布类型；
+2.  分别用 3σ、IQR、MAD 三种方法检测，报告各自识别出的异常值数量；
+3.  对 `capital-loss`，计算非零值的比例，解释三种方法的结果差异来自哪里；
+4.  **决策题**：`age` 的最大值是 90 岁，你会删除它吗？请给出**三条**支持你决定的证据（可以查阅数据说明文件 `data/adult.names` 和本案例背景）。
+5.  用 LOF方法 对 `age`、`education-num`、`hours-per-week`、`capital-gain` 四个变量做多变量异常检测。调整近邻数k，观察异常值的变化，说明参数选择如何影响结论。
+
+:::
+
+# 小结 {.unnumbered}
+
+## 一张决策清单 {.unnumbered}
+
+```{mermaid}
+flowchart TD
+    A["拿到一份新数据"] --> B["跑 vis_dat + vis_miss<br/>做整表体检"]
+    B --> C{"有缺失值吗？"}
+    C -->|有| D["统计缺失比例<br/>绘制缺失模式"]
+    D --> E["检查缺失与各变量的关联<br/>（含目标变量）"]
+    E --> F["判断机制：MCAR / MAR / MNAR"]
+    F --> G["选择策略并说明理由"]
+    C -->|没有| H["进入异常值检查"]
+    G --> H
+    H --> I["逐变量看分布类型"]
+    I --> J["按分布类型选择检测方法"]
+    J --> K{"是错误还是真实极端？"}
+    K -->|错误| L["修正或删除<br/>并记录原因"]
+    K -->|真实极端| M["保留，必要时单独处理"]
+    L --> N["敏感性分析：<br/>换一种处理，结论会变吗？"]
+    M --> N
+    N --> O["写下你的决策与依据"]
+```
+
+::: {.callout-important title="三条要带走的原则"}
+1.  **先描述，再检测，最后处理。** 跳过“描述"直接套公式，是绝大多数数据质量事故的起点。
+2.  **任何方法都有前提。** 3σ 要正态，IQR 要单峰连续，马氏距离要椭圆对称——前提不满足时，方法给出的数字依然精确，但已经没有意义。
+3.  **决策必须留下记录。** 在报告里写下“删除了 N 条，理由是 X，替代方案 Y 的结论差异是 Z"。可复现的决策，比正确的决策更重要。
+:::
