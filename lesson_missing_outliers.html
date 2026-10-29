@@ -5501,14 +5501,12 @@ window.Quarto = {
   <ul class="collapse">
   <li><a href="#马氏距离" id="toc-马氏距离" class="nav-link" data-scroll-target="#马氏距离"><span class="header-section-number">2.3.1</span> 马氏距离</a></li>
   <li><a href="#基于密度的方法dbscan" id="toc-基于密度的方法dbscan" class="nav-link" data-scroll-target="#基于密度的方法dbscan"><span class="header-section-number">2.3.2</span> 基于密度的方法：DBSCAN</a></li>
-  <li><a href="#lof方法" id="toc-lof方法" class="nav-link" data-scroll-target="#lof方法"><span class="header-section-number">2.3.3</span> LOF方法</a></li>
   </ul></li>
   <li><a href="#处理从检测到决策" id="toc-处理从检测到决策" class="nav-link" data-scroll-target="#处理从检测到决策"><span class="header-section-number">2.4</span> 处理：从“检测”到”决策”</a></li>
   <li><a href="#判断错误还是真实极端" id="toc-判断错误还是真实极端" class="nav-link" data-scroll-target="#判断错误还是真实极端"><span class="header-section-number">2.5</span> 判断“错误还是真实极端”</a>
   <ul class="collapse">
   <li><a href="#例-acapital-gain-99999" id="toc-例-acapital-gain-99999" class="nav-link" data-scroll-target="#例-acapital-gain-99999"><span class="header-section-number">2.5.1</span> 例 A：<code>capital-gain == 99999</code></a></li>
   <li><a href="#例-bhours-per-week-99" id="toc-例-bhours-per-week-99" class="nav-link" data-scroll-target="#例-bhours-per-week-99"><span class="header-section-number">2.5.2</span> 例 B：<code>hours-per-week == 99</code></a></li>
-  <li><a href="#例-cfnlwgt-的极端大值" id="toc-例-cfnlwgt-的极端大值" class="nav-link" data-scroll-target="#例-cfnlwgt-的极端大值"><span class="header-section-number">2.5.3</span> 例 C：<code>fnlwgt</code> 的极端大值</a></li>
   </ul></li>
   <li><a href="#课后作业-2" id="toc-课后作业-2" class="nav-link" data-scroll-target="#课后作业-2"><span class="header-section-number">2.6</span> 课后作业 2</a></li>
   </ul></li>
@@ -5541,7 +5539,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">发布于</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">2026年10月22日</p>
+      <p class="date">2026年10月29日</p>
     </div>
   </div>
   
@@ -6972,13 +6970,13 @@ window.Quarto = {
          0          0          0          0       2712       2712 </code></pre>
 </div>
 </div>
-<div class="callout callout-style-default callout-important callout-titled" title="这个结果值得停下来讲 5 分钟">
+<div class="callout callout-style-default callout-important callout-titled" title="IQR 法则在零膨胀数据上彻底失效">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">重要</span>这个结果值得停下来讲 5 分钟
+<span class="screen-reader-only">重要</span>IQR 法则在零膨胀数据上彻底失效
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -7260,9 +7258,6 @@ window.Quarto = {
 </div>
 </div>
 </section>
-<section id="lof方法" class="level3" data-number="2.3.3">
-<h3 data-number="2.3.3" class="anchored" data-anchor-id="lof方法"><span class="header-section-number">2.3.3</span> LOF方法</h3>
-</section>
 </section>
 <section id="处理从检测到决策" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="处理从检测到决策"><span class="header-section-number">2.4</span> 处理：从“检测”到”决策”</h2>
@@ -7388,7 +7383,7 @@ window.Quarto = {
 1   159     46.4            100</code></pre>
 </div>
 </div>
-<p><strong>证据</strong>：<code>99999</code> 出现了 159 次，而<strong>第二高</strong>的取值只有 41,310——中间是一整段空白。这个反复出现的上限“是<strong>封顶值（top-code）或哨兵值</strong>的典型特征，而不是 159 个人恰好都赚 99,999 美元。</p>
+<p><strong>证据</strong>：<code>99999</code> 出现了 159 次，而<strong>第二高</strong>的取值只有 41,310——中间是一整段空白。这个反复出现的上限是<strong>封顶值（top-code）或哨兵值</strong>的典型特征，而不是 159 个人恰好都赚 99,999 美元。</p>
 <p><strong>判断</strong>：高度疑似<strong>编码产物</strong>。处理时应当<strong>先向数据提供方确认</strong>，再决定删除。注意这 159 条数据都是 <code>&gt;50K</code>——它们承载了极强的信号，<strong>不能随手删掉</strong>。</p>
 </section>
 <section id="例-bhours-per-week-99" class="level3" data-number="2.5.2">
@@ -7419,24 +7414,6 @@ window.Quarto = {
 </div>
 <p><strong>证据</strong>：99 小时有 85 条。这批人的中位年龄 42 岁，<code>&gt;50K</code> 占比 29.4%，略高于全样本的 24.1%——<strong>完全符合“高投入高回报”的合理画像</strong>。</p>
 <p><strong>判断</strong>：这是<strong>真实极端值</strong>，应当<strong>保留</strong>。若模型需要，可以单独构造指示变量。</p>
-</section>
-<section id="例-cfnlwgt-的极端大值" class="level3" data-number="2.5.3">
-<h3 data-number="2.5.3" class="anchored" data-anchor-id="例-cfnlwgt-的极端大值"><span class="header-section-number">2.5.3</span> 例 C：<code>fnlwgt</code> 的极端大值</h3>
-<p><code>fnlwgt</code> 是<strong>抽样权重</strong>，不是个人属性。它的”异常”反映的是抽样设计，不是数据错误。</p>
-<div class="callout callout-style-default callout-warning callout-titled" title="教学提示：一个反例能省下很多时间">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">警告</span>教学提示：一个反例能省下很多时间
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><code>fnlwgt</code> 是学生最常误删的变量之一。这里的关键不是统计方法，而是<strong>读懂字段含义</strong>。</p>
-<p>请学生记住：<strong>在做任何异常值处理之前，先确认这个变量到底度量什么。</strong> 这一句话能避免的建模事故，比任何检测算法都多。</p>
-</div>
-</div>
 </section>
 </section>
 <section id="课后作业-2" class="level2" data-number="2.6">
@@ -8738,7 +8715,7 @@ window.Quarto = {
 <span id="cb74-806"><a href="#cb74-806" aria-hidden="true" tabindex="-1"></a>  非零值总数 <span class="ot">=</span> <span class="fu">sum</span>(x <span class="sc">&gt;</span> <span class="dv">0</span>))</span>
 <span id="cb74-807"><a href="#cb74-807" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb74-808"><a href="#cb74-808" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-809"><a href="#cb74-809" aria-hidden="true" tabindex="-1"></a>::: {.callout-important title=&quot;这个结果值得停下来讲 5 分钟&quot;}</span>
+<span id="cb74-809"><a href="#cb74-809" aria-hidden="true" tabindex="-1"></a>::: {.callout-important title=&quot;IQR 法则在零膨胀数据上彻底失效&quot;}</span>
 <span id="cb74-810"><a href="#cb74-810" aria-hidden="true" tabindex="-1"></a><span class="in">`capital-gain`</span> 有 92% 的记录取值为 0，于是 $Q_1 = Q_3 = 0$，$\text{IQR} = 0$，上界也就是 0。</span>
 <span id="cb74-811"><a href="#cb74-811" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb74-812"><a href="#cb74-812" aria-hidden="true" tabindex="-1"></a>结果是：**任何大于 0 的取值都被判为异常**——恰好是全部 2,712 条非零记录（8.3%）。</span>
@@ -8890,139 +8867,127 @@ window.Quarto = {
 <span id="cb74-972"><a href="#cb74-972" aria-hidden="true" tabindex="-1"></a>  簇数 <span class="ot">=</span> <span class="fu">length</span>(<span class="fu">setdiff</span>(<span class="fu">unique</span>(db<span class="sc">$</span>cluster), <span class="dv">0</span>)))</span>
 <span id="cb74-973"><a href="#cb74-973" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb74-974"><a href="#cb74-974" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-975"><a href="#cb74-975" aria-hidden="true" tabindex="-1"></a><span class="fu">### LOF方法</span></span>
-<span id="cb74-976"><a href="#cb74-976" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-975"><a href="#cb74-975" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-976"><a href="#cb74-976" aria-hidden="true" tabindex="-1"></a><span class="fu">## 处理：从“检测&quot;到&quot;决策&quot;</span></span>
 <span id="cb74-977"><a href="#cb74-977" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-978"><a href="#cb74-978" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-979"><a href="#cb74-979" aria-hidden="true" tabindex="-1"></a><span class="fu">## 处理：从“检测&quot;到&quot;决策&quot;</span></span>
-<span id="cb74-980"><a href="#cb74-980" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-981"><a href="#cb74-981" aria-hidden="true" tabindex="-1"></a>四种处理方式，各自代价不同：</span>
-<span id="cb74-982"><a href="#cb74-982" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-983"><a href="#cb74-983" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 方式 <span class="pp">|</span> 做法 <span class="pp">|</span> 代价 <span class="pp">|</span></span>
-<span id="cb74-984"><a href="#cb74-984" aria-hidden="true" tabindex="-1"></a><span class="pp">|------------------------|------------------------|------------------------|</span></span>
-<span id="cb74-985"><a href="#cb74-985" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **删除** <span class="pp">|</span> 滤掉超阈值的记录 <span class="pp">|</span> 损失样本；若异常与目标相关，引入偏误 <span class="pp">|</span></span>
-<span id="cb74-986"><a href="#cb74-986" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **缩尾**（winsorize） | 把极端值压到第 1/99 百分位 | 保留样本，但**扭曲了真实取值** <span class="pp">|</span></span>
-<span id="cb74-987"><a href="#cb74-987" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **变换** <span class="pp">|</span> <span class="in">`log`</span> / <span class="in">`Box-Cox`</span> / <span class="in">`Yeo-Johnson`</span> <span class="pp">|</span> 改变量纲，可解释性下降 <span class="pp">|</span></span>
-<span id="cb74-988"><a href="#cb74-988" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **保留 + 分开建模** <span class="pp">|</span> 单独建一个指示变量或分段处理 <span class="pp">|</span> 模型更复杂 <span class="pp">|</span></span>
-<span id="cb74-989"><a href="#cb74-989" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-992"><a href="#cb74-992" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb74-993"><a href="#cb74-993" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: handling-compare</span></span>
-<span id="cb74-994"><a href="#cb74-994" aria-hidden="true" tabindex="-1"></a>winsorize <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">p =</span> <span class="fl">0.01</span>) {</span>
-<span id="cb74-995"><a href="#cb74-995" aria-hidden="true" tabindex="-1"></a>  q <span class="ot">&lt;-</span> <span class="fu">quantile</span>(x, <span class="fu">c</span>(p, <span class="dv">1</span> <span class="sc">-</span> p), <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb74-996"><a href="#cb74-996" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pmin</span>(<span class="fu">pmax</span>(x, q[<span class="dv">1</span>]), q[<span class="dv">2</span>])</span>
-<span id="cb74-997"><a href="#cb74-997" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb74-998"><a href="#cb74-998" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-999"><a href="#cb74-999" aria-hidden="true" tabindex="-1"></a>cg <span class="ot">&lt;-</span> train<span class="sc">$</span><span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span></span>
-<span id="cb74-1000"><a href="#cb74-1000" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1001"><a href="#cb74-1001" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
-<span id="cb74-1002"><a href="#cb74-1002" aria-hidden="true" tabindex="-1"></a>  处理方式 <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;原始&quot;</span>, <span class="st">&quot;缩尾至 1%/99%&quot;</span>, <span class="st">&quot;删除 IQR 离群点&quot;</span>, <span class="st">&quot;log1p 变换&quot;</span>),</span>
-<span id="cb74-1003"><a href="#cb74-1003" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">capital-gain 均值</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(</span>
-<span id="cb74-1004"><a href="#cb74-1004" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(cg),</span>
-<span id="cb74-1005"><a href="#cb74-1005" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(<span class="fu">winsorize</span>(cg)),</span>
-<span id="cb74-1006"><a href="#cb74-1006" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(cg[<span class="sc">!</span><span class="fu">detect_iqr</span>(cg)]),</span>
-<span id="cb74-1007"><a href="#cb74-1007" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(<span class="fu">log1p</span>(cg))</span>
-<span id="cb74-1008"><a href="#cb74-1008" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb74-1009"><a href="#cb74-1009" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">样本量</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fu">nrow</span>(train), <span class="fu">nrow</span>(train), <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">detect_iqr</span>(cg)), <span class="fu">nrow</span>(train))</span>
-<span id="cb74-1010"><a href="#cb74-1010" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb74-1011"><a href="#cb74-1011" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">3</span>)))</span>
-<span id="cb74-1012"><a href="#cb74-1012" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb74-1013"><a href="#cb74-1013" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1014"><a href="#cb74-1014" aria-hidden="true" tabindex="-1"></a>::: {.callout-important title=&quot;注意&quot;}</span>
-<span id="cb74-1015"><a href="#cb74-1015" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**原始**：均值 1,077.6</span>
-<span id="cb74-1016"><a href="#cb74-1016" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**缩尾 1%/99%**：均值降到约 634</span>
-<span id="cb74-1017"><a href="#cb74-1017" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**删除 IQR 离群点**：均值变成 **0**（因为 IQR 法则把全部非零值都删掉了）</span>
+<span id="cb74-978"><a href="#cb74-978" aria-hidden="true" tabindex="-1"></a>四种处理方式，各自代价不同：</span>
+<span id="cb74-979"><a href="#cb74-979" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-980"><a href="#cb74-980" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 方式 <span class="pp">|</span> 做法 <span class="pp">|</span> 代价 <span class="pp">|</span></span>
+<span id="cb74-981"><a href="#cb74-981" aria-hidden="true" tabindex="-1"></a><span class="pp">|------------------------|------------------------|------------------------|</span></span>
+<span id="cb74-982"><a href="#cb74-982" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **删除** <span class="pp">|</span> 滤掉超阈值的记录 <span class="pp">|</span> 损失样本；若异常与目标相关，引入偏误 <span class="pp">|</span></span>
+<span id="cb74-983"><a href="#cb74-983" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **缩尾**（winsorize） | 把极端值压到第 1/99 百分位 | 保留样本，但**扭曲了真实取值** <span class="pp">|</span></span>
+<span id="cb74-984"><a href="#cb74-984" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **变换** <span class="pp">|</span> <span class="in">`log`</span> / <span class="in">`Box-Cox`</span> / <span class="in">`Yeo-Johnson`</span> <span class="pp">|</span> 改变量纲，可解释性下降 <span class="pp">|</span></span>
+<span id="cb74-985"><a href="#cb74-985" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **保留 + 分开建模** <span class="pp">|</span> 单独建一个指示变量或分段处理 <span class="pp">|</span> 模型更复杂 <span class="pp">|</span></span>
+<span id="cb74-986"><a href="#cb74-986" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-989"><a href="#cb74-989" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb74-990"><a href="#cb74-990" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: handling-compare</span></span>
+<span id="cb74-991"><a href="#cb74-991" aria-hidden="true" tabindex="-1"></a>winsorize <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">p =</span> <span class="fl">0.01</span>) {</span>
+<span id="cb74-992"><a href="#cb74-992" aria-hidden="true" tabindex="-1"></a>  q <span class="ot">&lt;-</span> <span class="fu">quantile</span>(x, <span class="fu">c</span>(p, <span class="dv">1</span> <span class="sc">-</span> p), <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb74-993"><a href="#cb74-993" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pmin</span>(<span class="fu">pmax</span>(x, q[<span class="dv">1</span>]), q[<span class="dv">2</span>])</span>
+<span id="cb74-994"><a href="#cb74-994" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb74-995"><a href="#cb74-995" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-996"><a href="#cb74-996" aria-hidden="true" tabindex="-1"></a>cg <span class="ot">&lt;-</span> train<span class="sc">$</span><span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span></span>
+<span id="cb74-997"><a href="#cb74-997" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-998"><a href="#cb74-998" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
+<span id="cb74-999"><a href="#cb74-999" aria-hidden="true" tabindex="-1"></a>  处理方式 <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;原始&quot;</span>, <span class="st">&quot;缩尾至 1%/99%&quot;</span>, <span class="st">&quot;删除 IQR 离群点&quot;</span>, <span class="st">&quot;log1p 变换&quot;</span>),</span>
+<span id="cb74-1000"><a href="#cb74-1000" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">capital-gain 均值</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(</span>
+<span id="cb74-1001"><a href="#cb74-1001" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(cg),</span>
+<span id="cb74-1002"><a href="#cb74-1002" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(<span class="fu">winsorize</span>(cg)),</span>
+<span id="cb74-1003"><a href="#cb74-1003" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(cg[<span class="sc">!</span><span class="fu">detect_iqr</span>(cg)]),</span>
+<span id="cb74-1004"><a href="#cb74-1004" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mean</span>(<span class="fu">log1p</span>(cg))</span>
+<span id="cb74-1005"><a href="#cb74-1005" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb74-1006"><a href="#cb74-1006" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">样本量</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fu">nrow</span>(train), <span class="fu">nrow</span>(train), <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">detect_iqr</span>(cg)), <span class="fu">nrow</span>(train))</span>
+<span id="cb74-1007"><a href="#cb74-1007" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb74-1008"><a href="#cb74-1008" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">3</span>)))</span>
+<span id="cb74-1009"><a href="#cb74-1009" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb74-1010"><a href="#cb74-1010" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1011"><a href="#cb74-1011" aria-hidden="true" tabindex="-1"></a>::: {.callout-important title=&quot;注意&quot;}</span>
+<span id="cb74-1012"><a href="#cb74-1012" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**原始**：均值 1,077.6</span>
+<span id="cb74-1013"><a href="#cb74-1013" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**缩尾 1%/99%**：均值降到约 634</span>
+<span id="cb74-1014"><a href="#cb74-1014" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**删除 IQR 离群点**：均值变成 **0**（因为 IQR 法则把全部非零值都删掉了）</span>
+<span id="cb74-1015"><a href="#cb74-1015" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1016"><a href="#cb74-1016" aria-hidden="true" tabindex="-1"></a>**同一份数据、同一句“处理异常值&quot;，三种做法给出三个完全不同的均值。** 这不是“哪个对&quot;的问题，而是“**你必须说明你做了哪一种，以及为什么**&quot;的问题。</span>
+<span id="cb74-1017"><a href="#cb74-1017" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb74-1018"><a href="#cb74-1018" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1019"><a href="#cb74-1019" aria-hidden="true" tabindex="-1"></a>**同一份数据、同一句“处理异常值&quot;，三种做法给出三个完全不同的均值。** 这不是“哪个对&quot;的问题，而是“**你必须说明你做了哪一种，以及为什么**&quot;的问题。</span>
-<span id="cb74-1020"><a href="#cb74-1020" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb74-1021"><a href="#cb74-1021" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1022"><a href="#cb74-1022" aria-hidden="true" tabindex="-1"></a><span class="fu">## 判断“错误还是真实极端&quot;</span></span>
-<span id="cb74-1023"><a href="#cb74-1023" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1024"><a href="#cb74-1024" aria-hidden="true" tabindex="-1"></a>这是本课最需要**领域判断**的一步。用三个例子做对照。</span>
-<span id="cb74-1025"><a href="#cb74-1025" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1026"><a href="#cb74-1026" aria-hidden="true" tabindex="-1"></a><span class="fu">### 例 A：`capital-gain == 99999`</span></span>
-<span id="cb74-1027"><a href="#cb74-1027" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1030"><a href="#cb74-1030" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb74-1031"><a href="#cb74-1031" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: case-a</span></span>
-<span id="cb74-1032"><a href="#cb74-1032" aria-hidden="true" tabindex="-1"></a>train <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span> <span class="sc">&gt;</span> <span class="dv">20000</span>) <span class="sc">|&gt;</span></span>
-<span id="cb74-1033"><a href="#cb74-1033" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(<span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span>) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(<span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span>)) <span class="sc">|&gt;</span> <span class="fu">head</span>(<span class="dv">5</span>)</span>
-<span id="cb74-1034"><a href="#cb74-1034" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1035"><a href="#cb74-1035" aria-hidden="true" tabindex="-1"></a>train <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span> <span class="sc">==</span> <span class="dv">99999</span>) <span class="sc">|&gt;</span></span>
-<span id="cb74-1036"><a href="#cb74-1036" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), 平均年龄 <span class="ot">=</span> <span class="fu">mean</span>(age),</span>
-<span id="cb74-1037"><a href="#cb74-1037" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">&gt;50K 占比(%)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(income <span class="sc">==</span> <span class="st">&quot;&gt;50K&quot;</span>), <span class="dv">1</span>))</span>
-<span id="cb74-1038"><a href="#cb74-1038" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb74-1039"><a href="#cb74-1039" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1040"><a href="#cb74-1040" aria-hidden="true" tabindex="-1"></a>**证据**：`99999` 出现了 159 次，而**第二高**的取值只有 41,310——中间是一整段空白。这个反复出现的上限“是**封顶值（top-code）或哨兵值**的典型特征，而不是 159 个人恰好都赚 99,999 美元。</span>
-<span id="cb74-1041"><a href="#cb74-1041" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1042"><a href="#cb74-1042" aria-hidden="true" tabindex="-1"></a>**判断**：高度疑似**编码产物**。处理时应当**先向数据提供方确认**，再决定删除。注意这 159 条数据都是 `&gt;50K`——它们承载了极强的信号，**不能随手删掉**。</span>
-<span id="cb74-1043"><a href="#cb74-1043" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1044"><a href="#cb74-1044" aria-hidden="true" tabindex="-1"></a><span class="fu">### 例 B：`hours-per-week == 99`</span></span>
-<span id="cb74-1045"><a href="#cb74-1045" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1048"><a href="#cb74-1048" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb74-1049"><a href="#cb74-1049" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: case-b</span></span>
-<span id="cb74-1050"><a href="#cb74-1050" aria-hidden="true" tabindex="-1"></a>train <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="st">`</span><span class="at">hours-per-week</span><span class="st">`</span> <span class="sc">==</span> <span class="dv">99</span>) <span class="sc">|&gt;</span></span>
-<span id="cb74-1051"><a href="#cb74-1051" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), 中位年龄 <span class="ot">=</span> <span class="fu">median</span>(age),</span>
-<span id="cb74-1052"><a href="#cb74-1052" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">&gt;50K 占比(%)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(income <span class="sc">==</span> <span class="st">&quot;&gt;50K&quot;</span>), <span class="dv">1</span>))</span>
+<span id="cb74-1019"><a href="#cb74-1019" aria-hidden="true" tabindex="-1"></a><span class="fu">## 判断“错误还是真实极端&quot;</span></span>
+<span id="cb74-1020"><a href="#cb74-1020" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1021"><a href="#cb74-1021" aria-hidden="true" tabindex="-1"></a>这是本课最需要**领域判断**的一步。用三个例子做对照。</span>
+<span id="cb74-1022"><a href="#cb74-1022" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1023"><a href="#cb74-1023" aria-hidden="true" tabindex="-1"></a><span class="fu">### 例 A：`capital-gain == 99999`</span></span>
+<span id="cb74-1024"><a href="#cb74-1024" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1027"><a href="#cb74-1027" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb74-1028"><a href="#cb74-1028" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: case-a</span></span>
+<span id="cb74-1029"><a href="#cb74-1029" aria-hidden="true" tabindex="-1"></a>train <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span> <span class="sc">&gt;</span> <span class="dv">20000</span>) <span class="sc">|&gt;</span></span>
+<span id="cb74-1030"><a href="#cb74-1030" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(<span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span>) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(<span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span>)) <span class="sc">|&gt;</span> <span class="fu">head</span>(<span class="dv">5</span>)</span>
+<span id="cb74-1031"><a href="#cb74-1031" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1032"><a href="#cb74-1032" aria-hidden="true" tabindex="-1"></a>train <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="st">`</span><span class="at">capital-gain</span><span class="st">`</span> <span class="sc">==</span> <span class="dv">99999</span>) <span class="sc">|&gt;</span></span>
+<span id="cb74-1033"><a href="#cb74-1033" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), 平均年龄 <span class="ot">=</span> <span class="fu">mean</span>(age),</span>
+<span id="cb74-1034"><a href="#cb74-1034" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">&gt;50K 占比(%)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(income <span class="sc">==</span> <span class="st">&quot;&gt;50K&quot;</span>), <span class="dv">1</span>))</span>
+<span id="cb74-1035"><a href="#cb74-1035" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb74-1036"><a href="#cb74-1036" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1037"><a href="#cb74-1037" aria-hidden="true" tabindex="-1"></a>**证据**：`99999` 出现了 159 次，而**第二高**的取值只有 41,310——中间是一整段空白。这个反复出现的上限是**封顶值（top-code）或哨兵值**的典型特征，而不是 159 个人恰好都赚 99,999 美元。</span>
+<span id="cb74-1038"><a href="#cb74-1038" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1039"><a href="#cb74-1039" aria-hidden="true" tabindex="-1"></a>**判断**：高度疑似**编码产物**。处理时应当**先向数据提供方确认**，再决定删除。注意这 159 条数据都是 `&gt;50K`——它们承载了极强的信号，**不能随手删掉**。</span>
+<span id="cb74-1040"><a href="#cb74-1040" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1041"><a href="#cb74-1041" aria-hidden="true" tabindex="-1"></a><span class="fu">### 例 B：`hours-per-week == 99`</span></span>
+<span id="cb74-1042"><a href="#cb74-1042" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1045"><a href="#cb74-1045" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb74-1046"><a href="#cb74-1046" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: case-b</span></span>
+<span id="cb74-1047"><a href="#cb74-1047" aria-hidden="true" tabindex="-1"></a>train <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="st">`</span><span class="at">hours-per-week</span><span class="st">`</span> <span class="sc">==</span> <span class="dv">99</span>) <span class="sc">|&gt;</span></span>
+<span id="cb74-1048"><a href="#cb74-1048" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), 中位年龄 <span class="ot">=</span> <span class="fu">median</span>(age),</span>
+<span id="cb74-1049"><a href="#cb74-1049" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">&gt;50K 占比(%)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(income <span class="sc">==</span> <span class="st">&quot;&gt;50K&quot;</span>), <span class="dv">1</span>))</span>
+<span id="cb74-1050"><a href="#cb74-1050" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1051"><a href="#cb74-1051" aria-hidden="true" tabindex="-1"></a>train <span class="sc">|&gt;</span> <span class="fu">summarise</span>(全样本 <span class="ot">=</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(income <span class="sc">==</span> <span class="st">&quot;&gt;50K&quot;</span>), <span class="dv">1</span>))</span>
+<span id="cb74-1052"><a href="#cb74-1052" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb74-1053"><a href="#cb74-1053" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1054"><a href="#cb74-1054" aria-hidden="true" tabindex="-1"></a>train <span class="sc">|&gt;</span> <span class="fu">summarise</span>(全样本 <span class="ot">=</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(income <span class="sc">==</span> <span class="st">&quot;&gt;50K&quot;</span>), <span class="dv">1</span>))</span>
-<span id="cb74-1055"><a href="#cb74-1055" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb74-1054"><a href="#cb74-1054" aria-hidden="true" tabindex="-1"></a>**证据**：99 小时有 85 条。这批人的中位年龄 42 岁，`&gt;50K` 占比 29.4%，略高于全样本的 24.1%——**完全符合“高投入高回报&quot;的合理画像**。</span>
+<span id="cb74-1055"><a href="#cb74-1055" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb74-1056"><a href="#cb74-1056" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1057"><a href="#cb74-1057" aria-hidden="true" tabindex="-1"></a>**证据**：99 小时有 85 条。这批人的中位年龄 42 岁，`&gt;50K` 占比 29.4%，略高于全样本的 24.1%——**完全符合“高投入高回报&quot;的合理画像**。</span>
+<span id="cb74-1057"><a href="#cb74-1057" aria-hidden="true" tabindex="-1"></a>**判断**：这是**真实极端值**，应当**保留**。若模型需要，可以单独构造指示变量。</span>
 <span id="cb74-1058"><a href="#cb74-1058" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb74-1059"><a href="#cb74-1059" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1060"><a href="#cb74-1060" aria-hidden="true" tabindex="-1"></a>**判断**：这是**真实极端值**，应当**保留**。若模型需要，可以单独构造指示变量。</span>
+<span id="cb74-1060"><a href="#cb74-1060" aria-hidden="true" tabindex="-1"></a><span class="fu">## 课后作业 2</span></span>
 <span id="cb74-1061"><a href="#cb74-1061" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1062"><a href="#cb74-1062" aria-hidden="true" tabindex="-1"></a><span class="fu">### 例 C：`fnlwgt` 的极端大值</span></span>
-<span id="cb74-1063"><a href="#cb74-1063" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1064"><a href="#cb74-1064" aria-hidden="true" tabindex="-1"></a><span class="in">`fnlwgt`</span> 是**抽样权重**，不是个人属性。它的&quot;异常&quot;反映的是抽样设计，不是数据错误。</span>
-<span id="cb74-1065"><a href="#cb74-1065" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1066"><a href="#cb74-1066" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning title=&quot;教学提示：一个反例能省下很多时间&quot;}</span>
-<span id="cb74-1067"><a href="#cb74-1067" aria-hidden="true" tabindex="-1"></a><span class="in">`fnlwgt`</span> 是学生最常误删的变量之一。这里的关键不是统计方法，而是**读懂字段含义**。</span>
-<span id="cb74-1068"><a href="#cb74-1068" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1069"><a href="#cb74-1069" aria-hidden="true" tabindex="-1"></a>请学生记住：**在做任何异常值处理之前，先确认这个变量到底度量什么。** 这一句话能避免的建模事故，比任何检测算法都多。</span>
-<span id="cb74-1070"><a href="#cb74-1070" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb74-1071"><a href="#cb74-1071" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1072"><a href="#cb74-1072" aria-hidden="true" tabindex="-1"></a><span class="fu">## 课后作业 2</span></span>
-<span id="cb74-1073"><a href="#cb74-1073" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1074"><a href="#cb74-1074" aria-hidden="true" tabindex="-1"></a>::: {.callout-note title=&quot;作业 2：异常值决策报告&quot;}</span>
-<span id="cb74-1075"><a href="#cb74-1075" aria-hidden="true" tabindex="-1"></a>请针对 **`age`** 和 **`capital-loss`** 两个变量完成：</span>
+<span id="cb74-1062"><a href="#cb74-1062" aria-hidden="true" tabindex="-1"></a>::: {.callout-note title=&quot;作业 2：异常值决策报告&quot;}</span>
+<span id="cb74-1063"><a href="#cb74-1063" aria-hidden="true" tabindex="-1"></a>请针对 **`age`** 和 **`capital-loss`** 两个变量完成：</span>
+<span id="cb74-1064"><a href="#cb74-1064" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1065"><a href="#cb74-1065" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>分别画出分布图，判断各属于哪种分布类型；</span>
+<span id="cb74-1066"><a href="#cb74-1066" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>分别用 3σ、IQR、MAD 三种方法检测，报告各自识别出的异常值数量；</span>
+<span id="cb74-1067"><a href="#cb74-1067" aria-hidden="true" tabindex="-1"></a><span class="ss">3.  </span>对 <span class="in">`capital-loss`</span>，计算非零值的比例，解释三种方法的结果差异来自哪里；</span>
+<span id="cb74-1068"><a href="#cb74-1068" aria-hidden="true" tabindex="-1"></a><span class="ss">4.  </span>**决策题**：`age` 的最大值是 90 岁，你会删除它吗？请给出**三条**支持你决定的证据（可以查阅数据说明文件 <span class="in">`data/adult.names`</span> 和本案例背景）。</span>
+<span id="cb74-1069"><a href="#cb74-1069" aria-hidden="true" tabindex="-1"></a><span class="ss">5.  </span>用 LOF方法 对 <span class="in">`age`</span>、<span class="in">`education-num`</span>、<span class="in">`hours-per-week`</span>、<span class="in">`capital-gain`</span> 四个变量做多变量异常检测。调整近邻数k，观察异常值的变化，说明参数选择如何影响结论。</span>
+<span id="cb74-1070"><a href="#cb74-1070" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1071"><a href="#cb74-1071" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb74-1072"><a href="#cb74-1072" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1073"><a href="#cb74-1073" aria-hidden="true" tabindex="-1"></a><span class="fu"># 小结 {.unnumbered}</span></span>
+<span id="cb74-1074"><a href="#cb74-1074" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1075"><a href="#cb74-1075" aria-hidden="true" tabindex="-1"></a><span class="fu">## 一张决策清单 {.unnumbered}</span></span>
 <span id="cb74-1076"><a href="#cb74-1076" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1077"><a href="#cb74-1077" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>分别画出分布图，判断各属于哪种分布类型；</span>
-<span id="cb74-1078"><a href="#cb74-1078" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>分别用 3σ、IQR、MAD 三种方法检测，报告各自识别出的异常值数量；</span>
-<span id="cb74-1079"><a href="#cb74-1079" aria-hidden="true" tabindex="-1"></a><span class="ss">3.  </span>对 <span class="in">`capital-loss`</span>，计算非零值的比例，解释三种方法的结果差异来自哪里；</span>
-<span id="cb74-1080"><a href="#cb74-1080" aria-hidden="true" tabindex="-1"></a><span class="ss">4.  </span>**决策题**：`age` 的最大值是 90 岁，你会删除它吗？请给出**三条**支持你决定的证据（可以查阅数据说明文件 <span class="in">`data/adult.names`</span> 和本案例背景）。</span>
-<span id="cb74-1081"><a href="#cb74-1081" aria-hidden="true" tabindex="-1"></a><span class="ss">5.  </span>用 LOF方法 对 <span class="in">`age`</span>、<span class="in">`education-num`</span>、<span class="in">`hours-per-week`</span>、<span class="in">`capital-gain`</span> 四个变量做多变量异常检测。调整近邻数k，观察异常值的变化，说明参数选择如何影响结论。</span>
-<span id="cb74-1082"><a href="#cb74-1082" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1083"><a href="#cb74-1083" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb74-1084"><a href="#cb74-1084" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1085"><a href="#cb74-1085" aria-hidden="true" tabindex="-1"></a><span class="fu"># 小结 {.unnumbered}</span></span>
-<span id="cb74-1086"><a href="#cb74-1086" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1087"><a href="#cb74-1087" aria-hidden="true" tabindex="-1"></a><span class="fu">## 一张决策清单 {.unnumbered}</span></span>
-<span id="cb74-1088"><a href="#cb74-1088" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1091"><a href="#cb74-1091" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
-<span id="cb74-1092"><a href="#cb74-1092" aria-hidden="true" tabindex="-1"></a>flowchart TD</span>
-<span id="cb74-1093"><a href="#cb74-1093" aria-hidden="true" tabindex="-1"></a>    A[<span class="ot">&quot;</span><span class="st">拿到一份新数据</span><span class="ot">&quot;</span>] --&gt; B[<span class="ot">&quot;</span><span class="st">跑 vis_dat + vis_miss&lt;br/&gt;做整表体检</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1094"><a href="#cb74-1094" aria-hidden="true" tabindex="-1"></a>    B --&gt; C{<span class="ot">&quot;</span><span class="st">有缺失值吗？</span><span class="ot">&quot;</span>}</span>
-<span id="cb74-1095"><a href="#cb74-1095" aria-hidden="true" tabindex="-1"></a>    C --&gt;|有| D[<span class="ot">&quot;</span><span class="st">统计缺失比例&lt;br/&gt;绘制缺失模式</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1096"><a href="#cb74-1096" aria-hidden="true" tabindex="-1"></a>    D --&gt; E[<span class="ot">&quot;</span><span class="st">检查缺失与各变量的关联&lt;br/&gt;（含目标变量）</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1097"><a href="#cb74-1097" aria-hidden="true" tabindex="-1"></a>    E --&gt; F[<span class="ot">&quot;</span><span class="st">判断机制：MCAR / MAR / MNAR</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1098"><a href="#cb74-1098" aria-hidden="true" tabindex="-1"></a>    F --&gt; G[<span class="ot">&quot;</span><span class="st">选择策略并说明理由</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1099"><a href="#cb74-1099" aria-hidden="true" tabindex="-1"></a>    C --&gt;|没有| H[<span class="ot">&quot;</span><span class="st">进入异常值检查</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1100"><a href="#cb74-1100" aria-hidden="true" tabindex="-1"></a>    G --&gt; H</span>
-<span id="cb74-1101"><a href="#cb74-1101" aria-hidden="true" tabindex="-1"></a>    H --&gt; I[<span class="ot">&quot;</span><span class="st">逐变量看分布类型</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1102"><a href="#cb74-1102" aria-hidden="true" tabindex="-1"></a>    I --&gt; J[<span class="ot">&quot;</span><span class="st">按分布类型选择检测方法</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1103"><a href="#cb74-1103" aria-hidden="true" tabindex="-1"></a>    J --&gt; K{<span class="ot">&quot;</span><span class="st">是错误还是真实极端？</span><span class="ot">&quot;</span>}</span>
-<span id="cb74-1104"><a href="#cb74-1104" aria-hidden="true" tabindex="-1"></a>    K --&gt;|错误| L[<span class="ot">&quot;</span><span class="st">修正或删除&lt;br/&gt;并记录原因</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1105"><a href="#cb74-1105" aria-hidden="true" tabindex="-1"></a>    K --&gt;|真实极端| M[<span class="ot">&quot;</span><span class="st">保留，必要时单独处理</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1106"><a href="#cb74-1106" aria-hidden="true" tabindex="-1"></a>    L --&gt; N[<span class="ot">&quot;</span><span class="st">敏感性分析：&lt;br/&gt;换一种处理，结论会变吗？</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1107"><a href="#cb74-1107" aria-hidden="true" tabindex="-1"></a>    M --&gt; N</span>
-<span id="cb74-1108"><a href="#cb74-1108" aria-hidden="true" tabindex="-1"></a>    N --&gt; O[<span class="ot">&quot;</span><span class="st">写下你的决策与依据</span><span class="ot">&quot;</span>]</span>
-<span id="cb74-1109"><a href="#cb74-1109" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb74-1110"><a href="#cb74-1110" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb74-1111"><a href="#cb74-1111" aria-hidden="true" tabindex="-1"></a>::: {.callout-important title=&quot;三条要带走的原则&quot;}</span>
-<span id="cb74-1112"><a href="#cb74-1112" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>**先描述，再检测，最后处理。** 跳过“描述&quot;直接套公式，是绝大多数数据质量事故的起点。</span>
-<span id="cb74-1113"><a href="#cb74-1113" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>**任何方法都有前提。** 3σ 要正态，IQR 要单峰连续，马氏距离要椭圆对称——前提不满足时，方法给出的数字依然精确，但已经没有意义。</span>
-<span id="cb74-1114"><a href="#cb74-1114" aria-hidden="true" tabindex="-1"></a><span class="ss">3.  </span>**决策必须留下记录。** 在报告里写下“删除了 N 条，理由是 X，替代方案 Y 的结论差异是 Z&quot;。可复现的决策，比正确的决策更重要。</span>
-<span id="cb74-1115"><a href="#cb74-1115" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb74-1079"><a href="#cb74-1079" aria-hidden="true" tabindex="-1"></a><span class="in">```{mermaid}</span></span>
+<span id="cb74-1080"><a href="#cb74-1080" aria-hidden="true" tabindex="-1"></a>flowchart TD</span>
+<span id="cb74-1081"><a href="#cb74-1081" aria-hidden="true" tabindex="-1"></a>    A[<span class="ot">&quot;</span><span class="st">拿到一份新数据</span><span class="ot">&quot;</span>] --&gt; B[<span class="ot">&quot;</span><span class="st">跑 vis_dat + vis_miss&lt;br/&gt;做整表体检</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1082"><a href="#cb74-1082" aria-hidden="true" tabindex="-1"></a>    B --&gt; C{<span class="ot">&quot;</span><span class="st">有缺失值吗？</span><span class="ot">&quot;</span>}</span>
+<span id="cb74-1083"><a href="#cb74-1083" aria-hidden="true" tabindex="-1"></a>    C --&gt;|有| D[<span class="ot">&quot;</span><span class="st">统计缺失比例&lt;br/&gt;绘制缺失模式</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1084"><a href="#cb74-1084" aria-hidden="true" tabindex="-1"></a>    D --&gt; E[<span class="ot">&quot;</span><span class="st">检查缺失与各变量的关联&lt;br/&gt;（含目标变量）</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1085"><a href="#cb74-1085" aria-hidden="true" tabindex="-1"></a>    E --&gt; F[<span class="ot">&quot;</span><span class="st">判断机制：MCAR / MAR / MNAR</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1086"><a href="#cb74-1086" aria-hidden="true" tabindex="-1"></a>    F --&gt; G[<span class="ot">&quot;</span><span class="st">选择策略并说明理由</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1087"><a href="#cb74-1087" aria-hidden="true" tabindex="-1"></a>    C --&gt;|没有| H[<span class="ot">&quot;</span><span class="st">进入异常值检查</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1088"><a href="#cb74-1088" aria-hidden="true" tabindex="-1"></a>    G --&gt; H</span>
+<span id="cb74-1089"><a href="#cb74-1089" aria-hidden="true" tabindex="-1"></a>    H --&gt; I[<span class="ot">&quot;</span><span class="st">逐变量看分布类型</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1090"><a href="#cb74-1090" aria-hidden="true" tabindex="-1"></a>    I --&gt; J[<span class="ot">&quot;</span><span class="st">按分布类型选择检测方法</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1091"><a href="#cb74-1091" aria-hidden="true" tabindex="-1"></a>    J --&gt; K{<span class="ot">&quot;</span><span class="st">是错误还是真实极端？</span><span class="ot">&quot;</span>}</span>
+<span id="cb74-1092"><a href="#cb74-1092" aria-hidden="true" tabindex="-1"></a>    K --&gt;|错误| L[<span class="ot">&quot;</span><span class="st">修正或删除&lt;br/&gt;并记录原因</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1093"><a href="#cb74-1093" aria-hidden="true" tabindex="-1"></a>    K --&gt;|真实极端| M[<span class="ot">&quot;</span><span class="st">保留，必要时单独处理</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1094"><a href="#cb74-1094" aria-hidden="true" tabindex="-1"></a>    L --&gt; N[<span class="ot">&quot;</span><span class="st">敏感性分析：&lt;br/&gt;换一种处理，结论会变吗？</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1095"><a href="#cb74-1095" aria-hidden="true" tabindex="-1"></a>    M --&gt; N</span>
+<span id="cb74-1096"><a href="#cb74-1096" aria-hidden="true" tabindex="-1"></a>    N --&gt; O[<span class="ot">&quot;</span><span class="st">写下你的决策与依据</span><span class="ot">&quot;</span>]</span>
+<span id="cb74-1097"><a href="#cb74-1097" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb74-1098"><a href="#cb74-1098" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-1099"><a href="#cb74-1099" aria-hidden="true" tabindex="-1"></a>::: {.callout-important title=&quot;三条要带走的原则&quot;}</span>
+<span id="cb74-1100"><a href="#cb74-1100" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>**先描述，再检测，最后处理。** 跳过“描述&quot;直接套公式，是绝大多数数据质量事故的起点。</span>
+<span id="cb74-1101"><a href="#cb74-1101" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>**任何方法都有前提。** 3σ 要正态，IQR 要单峰连续，马氏距离要椭圆对称——前提不满足时，方法给出的数字依然精确，但已经没有意义。</span>
+<span id="cb74-1102"><a href="#cb74-1102" aria-hidden="true" tabindex="-1"></a><span class="ss">3.  </span>**决策必须留下记录。** 在报告里写下“删除了 N 条，理由是 X，替代方案 Y 的结论差异是 Z&quot;。可复现的决策，比正确的决策更重要。</span>
+<span id="cb74-1103"><a href="#cb74-1103" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="复制到剪贴板" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
